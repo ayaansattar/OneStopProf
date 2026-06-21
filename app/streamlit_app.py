@@ -91,8 +91,8 @@ if not professors:
     st.error("No professors found. Run the scraper and pipeline first.")
     st.stop()
 
-if "query" not in st.session_state:
-    st.session_state.query = ""
+if "query_input" not in st.session_state:
+    st.session_state.query_input = ""
 
 col1, col2 = st.columns([1, 3])
 
@@ -126,20 +126,20 @@ with col2:
         "What do students say about exams?",
     ]
     example_cols = st.columns(len(examples))
-    for col, example in zip(example_cols, examples):
-        if col.button(example, use_container_width=True):
-            st.session_state.query = example
+    for i, (col, example) in enumerate(zip(example_cols, examples)):
+        if col.button(example, use_container_width=True, key=f"example_{i}"):
+            st.session_state.query_input = example
+            st.rerun()
 
     with st.form("query_form", clear_on_submit=False):
         query = st.text_input(
             "Your question:",
-            value=st.session_state.query,
+            key="query_input",
             placeholder="e.g. Is this professor good for beginners?",
         )
         submitted = st.form_submit_button("Ask", type="primary")
 
     if submitted and query.strip():
-        st.session_state.query = query.strip()
         with st.spinner("Searching through student reviews..."):
             result = ask(query.strip(), professor_id)
 
