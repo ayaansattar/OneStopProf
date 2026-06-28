@@ -41,6 +41,9 @@ def _metadata(chunk: dict) -> dict:
     return meta
 
 
+BATCH_SIZE = 5000
+
+
 def load_chunks(chunks: list[dict]) -> int:
     if not chunks:
         print("No chunks to load.")
@@ -50,11 +53,16 @@ def load_chunks(chunks: list[dict]) -> int:
     texts = [c["review_text"] for c in chunks]
     embeddings = embed_texts(texts)
 
-    collection.upsert(
-        ids=[_chunk_id(c) for c in chunks],
-        documents=texts,
-        embeddings=embeddings,
-        metadatas=[_metadata(c) for c in chunks],
-    )
+    for start in range(0, len(chunks), BATCH_SIZE):
+        end = start + BATCH_SIZE
+        batch = chunks[start:end]
+        collection.upsert(
+            ids=[_chunk_id(c) for c in batch],
+            documents=texts[start:end],
+            embeddings=embeddings[start:end],
+            metadatas=[_metadata(c) for c in batch],
+        )
+        print(f"Loaded batch {start // BATCH_SIZE + 1}: {len(batch)} chunks")
+
     print(f"Loaded {len(chunks)} chunks into ChromaDB")
     return len(chunks)

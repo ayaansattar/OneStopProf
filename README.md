@@ -11,7 +11,7 @@ A RAG-powered professor review aggregator. Scrapes student reviews from Rate My 
 
 | Layer | Tool |
 |---|---|
-| Scraping | `httpx`, BeautifulSoup |
+| Scraping | `httpx` |
 | Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`) |
 | Vector DB | ChromaDB |
 | LLM | Groq API (Llama 3.3) |
@@ -24,7 +24,8 @@ OneStopProf/
 ├── data/                    # Scraped reviews (JSON, gitignored)
 ├── chroma_db/               # Vector store (gitignored, auto-created)
 ├── ingestion/
-│   └── rmp_scraper.py       # Rate My Professors scraper
+│   ├── rmp_scraper.py       # Rate My Professors scraper
+│   └── scrape_school.py     # Scrape all professors at a school (RMP)
 ├── pipeline/
 │   ├── chunker.py           # Text chunking
 │   ├── embedder.py          # Local embeddings
@@ -71,12 +72,12 @@ Run all commands from the project root with the virtual environment activated.
 ### Step 1 — Scrape reviews
 
 ```powershell
-python -m ingestion.rmp_scraper
+python -m ingestion.scrape_school
 ```
 
-This scrapes **Marius Minea** (UMass Amherst, Computer Science) and saves ~100 reviews to `data/rmp_reviews.json`.
+Scrapes UMass Amherst professors from Rate My Professors and saves reviews to `data/rmp_reviews.json`.
 
-To scrape a different professor, edit the `__main__` block in `ingestion/rmp_scraper.py` with the professor name, school ID, and RMP teacher ID.
+To scrape a single professor instead, run `python -m ingestion.rmp_scraper` and edit the `__main__` block with the professor name, school ID, and RMP teacher ID.
 
 ### Step 2 — Embed and load into ChromaDB
 
