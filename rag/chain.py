@@ -24,7 +24,14 @@ def get_client() -> Groq:
     if _client is None:
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("GROQ_API_KEY is not set in .env")
+            try:
+                import streamlit as st
+
+                api_key = st.secrets.get("GROQ_API_KEY")
+            except Exception:
+                api_key = None
+        if not api_key:
+            raise ValueError("GROQ_API_KEY is not set in .env or Streamlit secrets")
         _client = Groq(api_key=api_key)
     return _client
 

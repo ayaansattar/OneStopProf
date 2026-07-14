@@ -103,6 +103,22 @@ streamlit run app/streamlit_app.py
 
 Open [http://localhost:8501](http://localhost:8501), select a professor, ask a question, and view the cited answer with source reviews.
 
+## Deploy (Streamlit Community Cloud)
+
+1. Push this repo to GitHub (include `chroma_db/` if you want the app to work without re-embedding).
+2. At [share.streamlit.io](https://share.streamlit.io) → **New app**.
+3. Set **Main file path** to `app/streamlit_app.py`.
+4. In **Advanced settings**, set **Python version to 3.11** (required for ChromaDB / sentence-transformers).
+5. Add secrets:
+
+```toml
+GROQ_API_KEY = "gsk_your_key_here"
+```
+
+6. Deploy. First install can take several minutes (downloads torch + the embedding model).
+
+If you see `installer returned a non-zero exit code`, open **Manage app → Logs**, find the first `ERROR:` line, reboot after setting Python to **3.11**, and redeploy.
+
 ## Adding More Professors
 
 1. Find the professor on [ratemyprofessors.com](https://www.ratemyprofessors.com) and note:

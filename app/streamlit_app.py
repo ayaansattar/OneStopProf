@@ -1,6 +1,13 @@
 import sys
 from pathlib import Path
 
+# ChromaDB on Streamlit Cloud needs a newer SQLite than the system default.
+try:
+    __import__("pysqlite3")
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+except ImportError:
+    pass
+
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
