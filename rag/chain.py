@@ -4,11 +4,11 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from groq import Groq
 
-from rag.retriever import extract_course_code, retrieve, retrieve_for_recommendation
-
 load_dotenv()
 
 _client = None
+
+__all__ = ["ask", "recommend", "get_client"]
 
 SYSTEM_PROMPT = """You are a helpful assistant that answers questions about university professors
 based on real student reviews. Follow these rules:
@@ -21,12 +21,12 @@ based on real student reviews. Follow these rules:
 
 RECOMMEND_PROMPT = """You help students choose professors for a course using real Rate My Professor reviews.
 Follow these rules:
-- Recommend 2–4 professors when evidence supports it, ranked best-fit first
+- Recommend 2-4 professors when evidence supports it, ranked best-fit first
 - Match the student's constraints (beginner-friendly, grading, exams, workload, difficulty)
 - Always name the professor and course when citing a claim
 - Cite Rate My Professor; never invent reviews or ratings
 - If evidence is thin, conflicting, or not clearly about the target course, say so
-- Keep the answer concise (about 2–4 short paragraphs or a short ranked list with reasons)
+- Keep the answer concise (about 2-4 short paragraphs or a short ranked list with reasons)
 """
 
 
@@ -47,7 +47,7 @@ def get_client() -> Groq:
     return _client
 
 
-def _format_context(chunks: list[dict]) -> str:
+def _format_context(chunks: list) -> str:
     parts = []
     for chunk in chunks:
         course = f" ({chunk['course']})" if chunk.get("course") else ""
@@ -56,8 +56,8 @@ def _format_context(chunks: list[dict]) -> str:
     return "\n---\n".join(parts)
 
 
-def _format_recommendation_context(chunks: list[dict], max_per_professor: int = 3) -> str:
-    by_prof: dict[str, list[dict]] = defaultdict(list)
+def _format_recommendation_context(chunks: list, max_per_professor: int = 3) -> str:
+    by_prof = defaultdict(list)
     for chunk in chunks:
         pid = chunk.get("professor_id") or chunk.get("name") or "unknown"
         by_prof[pid].append(chunk)
@@ -74,8 +74,8 @@ def _format_recommendation_context(chunks: list[dict], max_per_professor: int = 
     return "\n\n".join(sections)
 
 
-def _professor_summaries(chunks: list[dict]) -> list[dict]:
-    by_prof: dict[str, list[dict]] = defaultdict(list)
+def _professor_summaries(chunks: list) -> list:
+    by_prof = defaultdict(list)
     for chunk in chunks:
         pid = chunk.get("professor_id")
         if not pid:
@@ -114,6 +114,8 @@ def _professor_summaries(chunks: list[dict]) -> list[dict]:
 
 
 def ask(query: str, professor_id: str, n_results: int = 6) -> dict:
+    from rag.retriever import retrieve
+
     chunks = retrieve(query, professor_id, n_results=n_results)
 
     if not chunks:
@@ -143,6 +145,8 @@ def ask(query: str, professor_id: str, n_results: int = 6) -> dict:
 
 
 def recommend(query: str, n_results: int = 24) -> dict:
+    from rag.retriever import extract_course_code, retrieve_for_recommendation
+
     course = extract_course_code(query)
     chunks = retrieve_for_recommendation(query, course=course, n_results=n_results)
 

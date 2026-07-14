@@ -12,10 +12,17 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import streamlit as st
+import streamlit as st  # noqa: E402
+from pipeline.loader import get_collection  # noqa: E402
 
-from pipeline.loader import get_collection
-from rag.chain import ask, recommend
+try:
+    from rag.chain import ask, recommend  # noqa: E402
+except ImportError as exc:
+    raise ImportError(
+        "Failed to import ask/recommend from rag.chain. "
+        "Push the latest dual-mode commit and reboot the Streamlit app. "
+        f"Original error: {exc}"
+    ) from exc
 
 st.set_page_config(page_title="OneStopProf", page_icon="🎓", layout="wide")
 
