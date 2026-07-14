@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 import streamlit as st
 
 from pipeline.loader import get_collection
-from rag.chain import ask
+from rag.chain import ask, recommend
 
 st.set_page_config(page_title="OneStopProf", page_icon="🎓", layout="wide")
 
@@ -90,76 +90,136 @@ def _format_metric(value: float | None, suffix: str = "") -> str:
     return f"{value:.1f}{suffix}"
 
 
+def _render_sources(sources: list[dict], *, show_professor: bool = False) -> None:
+    with st.expander("📚 View Source Reviews"):
+        for i, source in enumerate(sources, 1):
+            course = f" · {source['course']}" if source.get("course") else ""
+            professor = ""
+            if show_professor and source.get("name"):
+                professor = f"{source['name']} · "
+            st.markdown(
+                f"**Source {i} — {professor}{source.get('source', 'unknown').upper()}{course}**"
+            )
+            st.markdown(f"> {source['text']}")
+            st.caption(
+                f"Rating: {source.get('rating', 'N/A')} | "
+                f"Date: {source.get('date', 'N/A')}"
+            )
+            st.divider()
+
+
 st.title("🎓 OneStopProf")
-st.caption("Ask anything about your professors — powered by real student reviews")
+st.caption("Find the right professor for your course — powered by real student reviews")
 
 professors = get_professors()
 if not professors:
     st.error("No professors found. Run the scraper and pipeline first.")
     st.stop()
 
-if "query_input" not in st.session_state:
-    st.session_state.query_input = ""
+if "rec_query" not in st.session_state:
+    st.session_state.rec_query = ""
+if "ask_query" not in st.session_state:
+    st.session_state.ask_query = ""
 
-col1, col2 = st.columns([1, 3])
+rec_tab, ask_tab = st.tabs(["Recommend a professor", "Ask about a professor"])
 
-with col1:
-    st.subheader("Select Professor")
-    selected_name = st.selectbox(
-        "Professor",
-        sorted(professors.values()),
-        label_visibility="collapsed",
-    )
-    professor_id = next(k for k, v in professors.items() if v == selected_name)
-    stats = get_professor_stats(professor_id)
-
-    st.markdown("---")
-    if stats["university"]:
-        st.caption(stats["university"])
-    if stats["department"]:
-        st.caption(stats["department"])
-
-    st.metric("Avg Rating", _format_metric(stats["avg_rating"], " / 5.0"))
-    st.metric("Avg Difficulty", _format_metric(stats["avg_difficulty"], " / 5.0"))
-    st.metric("Total Reviews", stats["total_reviews"])
-
-with col2:
-    st.subheader(f"Ask about {selected_name}")
+with rec_tab:
+    st.subheader("What course or kind of professor are you looking for?")
 
     st.markdown("**Try asking:**")
-    examples = [
-        "Is this professor good for beginners?",
-        "How is the grading style?",
-        "What do students say about exams?",
+    rec_examples = [
+        "Who should I take for CS220 as a beginner?",
+        "Easiest professor for CHEM111?",
+        "Best for MATH235 if I care about exams?",
     ]
-    example_cols = st.columns(len(examples))
-    for i, (col, example) in enumerate(zip(example_cols, examples)):
-        if col.button(example, use_container_width=True, key=f"example_{i}"):
-            st.session_state.query_input = example
+    rec_cols = st.columns(len(rec_examples))
+    for i, (col, example) in enumerate(zip(rec_cols, rec_examples)):
+        if col.button(example, use_container_width=True, key=f"rec_example_{i}"):
+            st.session_state.rec_query = example
             st.rerun()
 
-    with st.form("query_form", clear_on_submit=False):
-        query = st.text_input(
+    with st.form("recommend_form", clear_on_submit=False):
+        rec_query = st.text_input(
             "Your question:",
-            key="query_input",
-            placeholder="e.g. Is this professor good for beginners?",
+            key="rec_query",
+            placeholder="e.g. Who should I take for CS220 as a beginner?",
         )
-        submitted = st.form_submit_button("Ask", type="primary")
+        rec_submitted = st.form_submit_button("Recommend", type="primary")
 
-    if submitted and query.strip():
-        with st.spinner("Searching through student reviews..."):
-            result = ask(query.strip(), professor_id)
+    if rec_submitted and rec_query.strip():
+        with st.spinner("Searching reviews across professors..."):
+            result = recommend(rec_query.strip())
 
-        st.markdown("### Answer")
-        st.markdown(result["answer"])
+        if result.get("course"):
+            st.caption(f"Filtered toward course: **{result['course']}**")
 
-        with st.expander("📚 View Source Reviews"):
-            for i, source in enumerate(result["sources"], 1):
-                course = f" · {source['course']}" if source.get("course") else ""
-                st.markdown(f"**Source {i} — {source['source'].upper()}{course}**")
-                st.markdown(f"> {source['text']}")
-                st.caption(
-                    f"Rating: {source.get('rating', 'N/A')} | "
-                    f"Date: {source.get('date', 'N/A')}"
+        if result.get("professors"):
+            st.markdown("**Professors in the evidence set**")
+            for prof in result["professors"][:6]:
+                rating = (
+                    f"{prof['avg_rating_in_context']:.1f}/5"
+                    if prof.get("avg_rating_in_context") is not None
+                    else "N/A"
                 )
-                st.divider()
+                st.markdown(
+                    f"- **{prof['name']}** — context rating {rating} "
+                    f"({prof['review_count_in_context']} reviews used)"
+                )
+
+        st.markdown("### Recommendation")
+        st.markdown(result["answer"])
+        _render_sources(result["sources"], show_professor=True)
+
+with ask_tab:
+    col1, col2 = st.columns([1, 3])
+
+    with col1:
+        st.subheader("Select Professor")
+        selected_name = st.selectbox(
+            "Professor",
+            sorted(professors.values()),
+            label_visibility="collapsed",
+        )
+        professor_id = next(k for k, v in professors.items() if v == selected_name)
+        stats = get_professor_stats(professor_id)
+
+        st.markdown("---")
+        if stats["university"]:
+            st.caption(stats["university"])
+        if stats["department"]:
+            st.caption(stats["department"])
+
+        st.metric("Avg Rating", _format_metric(stats["avg_rating"], " / 5.0"))
+        st.metric("Avg Difficulty", _format_metric(stats["avg_difficulty"], " / 5.0"))
+        st.metric("Total Reviews", stats["total_reviews"])
+
+    with col2:
+        st.subheader(f"Ask about {selected_name}")
+
+        st.markdown("**Try asking:**")
+        ask_examples = [
+            "Is this professor good for beginners?",
+            "How is the grading style?",
+            "What do students say about exams?",
+        ]
+        ask_cols = st.columns(len(ask_examples))
+        for i, (col, example) in enumerate(zip(ask_cols, ask_examples)):
+            if col.button(example, use_container_width=True, key=f"ask_example_{i}"):
+                st.session_state.ask_query = example
+                st.rerun()
+
+        with st.form("ask_form", clear_on_submit=False):
+            ask_query = st.text_input(
+                "Your question:",
+                key="ask_query",
+                placeholder="e.g. Is this professor good for beginners?",
+            )
+            ask_submitted = st.form_submit_button("Ask", type="primary")
+
+        if ask_submitted and ask_query.strip():
+            with st.spinner("Searching through student reviews..."):
+                result = ask(ask_query.strip(), professor_id)
+
+            st.markdown("### Answer")
+            st.markdown(result["answer"])
+            _render_sources(result["sources"], show_professor=False)

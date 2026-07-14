@@ -1,11 +1,12 @@
 # OneStopProf
 
-A RAG-powered professor review aggregator. Scrapes student reviews from Rate My Professors, embeds them into a local vector database, and lets you ask natural-language questions about any professor — with cited answers grounded in real reviews.
+A RAG-powered professor review aggregator. Scrapes student reviews from Rate My Professors, embeds them into a local vector database, and lets you ask natural-language questions — either to **recommend professors for a course**, or to dig into a **specific professor**.
 
 **Example questions:**
-- *"Is this professor good for beginners in CS220?"*
-- *"How difficult is the grading?"*
-- *"What do students say about exams?"*
+- *"Who should I take for CS220 as a beginner?"* (Recommend mode)
+- *"Easiest professor for CHEM111?"* (Recommend mode)
+- *"How difficult is the grading?"* (Ask mode — pick a professor first)
+- *"What do students say about exams?"* (Ask mode)
 
 ## Tech Stack
 
@@ -93,7 +94,7 @@ Chunks reviews, generates embeddings, and loads them into `chroma_db/`. Runs a t
 python -m rag.chain
 ```
 
-Runs three sample questions against Marius Minea's reviews via Groq.
+Runs a sample course recommendation query, then a professor-specific question via Groq.
 
 ### Step 4 — Launch the web UI
 
@@ -101,7 +102,10 @@ Runs three sample questions against Marius Minea's reviews via Groq.
 streamlit run app/streamlit_app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501), select a professor, ask a question, and view the cited answer with source reviews.
+Open [http://localhost:8501](http://localhost:8501). The app has two modes:
+
+1. **Recommend a professor** (default) — ask about a course or preference and get ranked recommendations with cited reviews. Mentions like `CS220` filter retrieval toward that course.
+2. **Ask about a professor** — pick a professor from the dropdown and ask targeted questions.
 
 ## Deploy (Streamlit Community Cloud)
 
@@ -132,11 +136,12 @@ If you see `installer returned a non-zero exit code`, open **Manage app → Logs
 ```
 RMP GraphQL API  →  JSON reviews  →  Chunk + Embed  →  ChromaDB
                                                             ↓
-User question  →  Embed query  →  Retrieve top-k chunks  →  Groq LLM  →  Cited answer
+Recommend: course filter + multi-professor retrieve → Groq → ranked recommendations
+Ask: professor filter + retrieve → Groq → cited answer
 ```
 
 1. **Ingestion** — Reviews are scraped via RMP's GraphQL API and normalized to a unified schema.
 2. **Pipeline** — Reviews are chunked, embedded locally with `sentence-transformers`, and stored in ChromaDB.
-3. **Retrieval** — User queries are embedded and matched against review chunks via cosine similarity, filtered by professor.
+3. **Retrieval** — User queries are embedded and matched against review chunks via cosine similarity. Recommend mode filters by course when a code is detected (with open-search fallback); Ask mode filters by professor.
 4. **Generation** — Top chunks are passed to Groq (Llama 3.3) with a system prompt that enforces citations and balanced answers.
 
