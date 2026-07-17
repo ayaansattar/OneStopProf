@@ -16,11 +16,11 @@ import streamlit as st  # noqa: E402
 from pipeline.loader import get_collection  # noqa: E402
 
 try:
-    from rag.chain import ask, recommend  # noqa: E402
+    from rag.chain import ask, compare_courses, recommend  # noqa: E402
 except ImportError as exc:
     raise ImportError(
-        "Failed to import ask/recommend from rag.chain. "
-        "Push the latest dual-mode commit and reboot the Streamlit app. "
+        "Failed to import ask/recommend/compare_courses from rag.chain. "
+        "Push the latest commit and reboot the Streamlit app. "
         f"Original error: {exc}"
     ) from exc
 
@@ -127,8 +127,12 @@ if "rec_query" not in st.session_state:
     st.session_state.rec_query = ""
 if "ask_query" not in st.session_state:
     st.session_state.ask_query = ""
+if "cmp_query" not in st.session_state:
+    st.session_state.cmp_query = ""
 
-rec_tab, ask_tab = st.tabs(["Recommend a professor", "Ask about a professor"])
+rec_tab, cmp_tab, ask_tab = st.tabs(
+    ["Recommend a professor", "Compare courses", "Ask about a professor"]
+)
 
 with rec_tab:
     st.subheader("What course or kind of professor are you looking for?")
@@ -174,6 +178,55 @@ with rec_tab:
                 )
 
         st.markdown("### Recommendation")
+        st.markdown(result["answer"])
+        _render_sources(result["sources"], show_professor=True)
+
+with cmp_tab:
+    st.subheader("Compare courses side by side")
+    st.caption(
+        "Mention at least two course codes. You'll get pros/cons for each "
+        "plus professor recommendations grounded in student reviews."
+    )
+
+    st.markdown("**Try asking:**")
+    cmp_examples = [
+        "Compare CS220 vs MATH235 for a beginner",
+        "CS250 vs CS220 — which is harder?",
+        "CHEM111 vs BIO152 if I care about exams",
+    ]
+    cmp_cols = st.columns(len(cmp_examples))
+    for i, (col, example) in enumerate(zip(cmp_cols, cmp_examples)):
+        if col.button(example, use_container_width=True, key=f"cmp_example_{i}"):
+            st.session_state.cmp_query = example
+            st.rerun()
+
+    with st.form("compare_form", clear_on_submit=False):
+        cmp_query = st.text_input(
+            "Your comparison:",
+            key="cmp_query",
+            placeholder="e.g. Compare CS220 vs CS250 for a beginner",
+        )
+        cmp_submitted = st.form_submit_button("Compare", type="primary")
+
+    if cmp_submitted and cmp_query.strip():
+        with st.spinner("Gathering reviews for each course..."):
+            result = compare_courses(cmp_query.strip())
+
+        if result.get("courses"):
+            st.caption(f"Comparing: **{' vs '.join(result['courses'])}**")
+
+        by_course = result.get("by_course") or {}
+        if by_course:
+            st.markdown("**Evidence snapshot**")
+            for course, info in by_course.items():
+                profs = info.get("professors") or []
+                top_names = ", ".join(p["name"] for p in profs[:3]) or "none yet"
+                st.markdown(
+                    f"- **{course}** — {info.get('review_count', 0)} reviews; "
+                    f"professors in set: {top_names}"
+                )
+
+        st.markdown("### Comparison")
         st.markdown(result["answer"])
         _render_sources(result["sources"], show_professor=True)
 

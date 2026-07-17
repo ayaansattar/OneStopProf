@@ -37,16 +37,30 @@ def normalize_course_token(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", text).upper()
 
 
+COURSE_CODE_RE = re.compile(
+    r"\b([A-Za-z]{2,10})\s?-?\s?(\d{2,4}[A-Za-z]?)\b",
+)
+
+
 def extract_course_code(query: str) -> str | None:
-    """Pull a course code like CS220, CHEM 111, or ENGLWRIT112 from free text."""
-    match = re.search(
-        r"\b([A-Za-z]{2,10})\s?-?\s?(\d{2,4}[A-Za-z]?)\b",
-        query,
-    )
-    if not match:
-        return None
-    prefix, number = match.group(1), match.group(2)
-    return f"{prefix.upper()}{number.upper()}"
+    """Pull the first course code like CS220, CHEM 111, or ENGLWRIT112 from free text."""
+    codes = extract_course_codes(query)
+    return codes[0] if codes else None
+
+
+def extract_course_codes(query: str, limit: int = 4) -> list[str]:
+    """Pull unique course codes from free text, preserving order."""
+    found: list[str] = []
+    seen: set[str] = set()
+    for match in COURSE_CODE_RE.finditer(query):
+        code = f"{match.group(1).upper()}{match.group(2).upper()}"
+        if code in seen:
+            continue
+        seen.add(code)
+        found.append(code)
+        if len(found) >= limit:
+            break
+    return found
 
 
 def course_filter_candidates(course: str) -> list[str]:

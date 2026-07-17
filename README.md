@@ -4,9 +4,9 @@ A RAG-powered professor review aggregator. Scrapes student reviews from Rate My 
 
 **Example questions:**
 - *"Who should I take for CS220 as a beginner?"* (Recommend mode)
+- *"Compare CS220 vs MATH235 for a beginner"* (Compare mode)
 - *"Easiest professor for CHEM111?"* (Recommend mode)
 - *"How difficult is the grading?"* (Ask mode — pick a professor first)
-- *"What do students say about exams?"* (Ask mode)
 
 ## Tech Stack
 
@@ -102,10 +102,11 @@ Runs a sample course recommendation query, then a professor-specific question vi
 streamlit run app/streamlit_app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501). The app has two modes:
+Open [http://localhost:8501](http://localhost:8501). The app has three modes:
 
-1. **Recommend a professor** (default) — ask about a course or preference and get ranked recommendations with cited reviews. Mentions like `CS220` filter retrieval toward that course.
-2. **Ask about a professor** — pick a professor from the dropdown and ask targeted questions.
+1. **Recommend a professor** — ask about a course or preference and get ranked recommendations with cited reviews. Mentions like `CS220` filter retrieval toward that course.
+2. **Compare courses** — ask to compare two or more courses (e.g. `CS220 vs MATH235`); get pros/cons for each plus professor recommendations.
+3. **Ask about a professor** — pick a professor from the dropdown and ask targeted questions.
 
 ## Deploy (Streamlit Community Cloud)
 
