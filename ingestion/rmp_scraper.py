@@ -111,10 +111,6 @@ def encode_rmp_id(entity_type: str, numeric_id: str | int) -> str:
     return base64.b64encode(raw.encode()).decode()
 
 
-def decode_rmp_id(encoded_id: str) -> str:
-    return base64.b64decode(encoded_id).decode()
-
-
 def search_professor(name: str, school_id: str) -> list[dict]:
     if not school_id.startswith("U"):
         school_id = encode_rmp_id("School", school_id)

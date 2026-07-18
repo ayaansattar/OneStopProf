@@ -462,7 +462,6 @@ def get_corpus_stats() -> dict[str, int]:
         "professors": len(professors),
         "reviews": len(review_keys) or len(metadatas),
         "courses": len(courses),
-        "chunks": len(metadatas),
     }
 
 
@@ -527,13 +526,6 @@ def _html(markup: str) -> None:
     doesn't split indented multi-line HTML into broken fragments."""
     flat = " ".join(line.strip() for line in markup.strip().splitlines() if line.strip())
     st.markdown(flat, unsafe_allow_html=True)
-
-
-def _format_metric(value: float | None, suffix: str = "") -> str:
-    if value is None:
-        return "N/A"
-    return f"{value:.1f}{suffix}"
-
 
 def _rating_box_class(value: float | None) -> str:
     """RMP-style color scale: green = good, yellow = okay, red = awful."""
