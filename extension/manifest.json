@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "OneStopProf",
+  "description": "Detect professor context while browsing Rate My Professors.",
+  "version": "0.1.0",
+  "permissions": [
+    "activeTab"
+  ],
+  "action": {
+    "default_title": "OneStopProf",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.ratemyprofessors.com/professor/*",
+        "https://ratemyprofessors.com/professor/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

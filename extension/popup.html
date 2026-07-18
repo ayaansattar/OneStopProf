@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OneStopProf</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <header class="hero">
+      <div class="eyebrow">Student review assistant</div>
+      <div class="brand">OneStopProf</div>
+      <p>Quick professor context while you browse.</p>
+    </header>
+
+    <main>
+      <div id="status" class="status loading">Checking this page…</div>
+
+      <section id="professor-card" class="card" hidden>
+        <div class="card-label">Professor detected</div>
+        <h1 id="professor-name"></h1>
+        <p id="professor-meta" class="muted"></p>
+
+        <div id="course-section" hidden>
+          <div class="section-label">Courses found on this page</div>
+          <div id="course-list" class="chips"></div>
+        </div>
+      </section>
+
+      <section id="empty-card" class="card empty" hidden>
+        <div class="empty-icon">?</div>
+        <h1>No professor detected</h1>
+        <p>
+          Open a professor profile on Rate My Professors, then click the
+          OneStopProf extension again.
+        </p>
+      </section>
+
+      <section class="next-step">
+        <strong>Extension foundation ready</strong>
+        <span>
+          The next step is connecting this detected page context to the
+          OneStopProf API for live summaries.
+        </span>
+      </section>
+
+      <button id="refresh" type="button">Refresh page context</button>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

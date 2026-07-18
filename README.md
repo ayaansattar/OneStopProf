@@ -54,6 +54,7 @@ OneStopProf/
 │   └── chain.py             # LLM answer generation
 ├── app/
 │   └── streamlit_app.py     # Web UI
+├── extension/               # Experimental Chrome extension prototype
 ├── .streamlit/
 │   └── config.toml          # Streamlit theme and server settings
 ├── .devcontainer/           # Optional Codespaces/dev-container setup
@@ -148,6 +149,24 @@ Open [http://localhost:8501](http://localhost:8501). The app has three modes:
 2. **Compare courses** — ask to compare two or more courses (e.g. `CS220 vs MATH235`); get pros/cons for each plus professor recommendations.
 3. **Ask a professor** — type a name or browse the dropdown, inspect rating
    summaries, and ask questions grounded in that professor's reviews.
+
+## Chrome Extension Prototype
+
+The `extension/` directory contains a lightweight Manifest V3 prototype. Its
+popup detects Rate My Professors profile pages and extracts the professor name,
+RMP ID, visible course codes, and page text locally. It does not call the
+Python RAG pipeline yet.
+
+To try it:
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Select **Load unpacked** and choose the `extension/` directory.
+4. Open and reload an RMP professor page.
+5. Click the OneStopProf toolbar icon.
+
+See [`extension/README.md`](extension/README.md) for details and the planned
+API integration.
 
 ## Deploy (Streamlit Community Cloud)
 
