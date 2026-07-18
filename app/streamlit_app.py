@@ -851,20 +851,24 @@ with ask_tab:
         selected_name = st.selectbox(
             "Professor",
             sorted(professors.values()),
+            index=None,
+            placeholder="Type a name or pick from the list",
             label_visibility="collapsed",
         )
-        professor_id = next(k for k, v in professors.items() if v == selected_name)
-        stats = get_professor_stats(professor_id)
+        
+        if selected_name:
+            professor_id = next(k for k, v in professors.items() if v == selected_name)
+            stats = get_professor_stats(professor_id)
 
-        if stats["university"] or stats["department"]:
-            meta_bits = " · ".join(
-                part
-                for part in [stats.get("university"), stats.get("department")]
-                if part
-            )
-            st.caption(meta_bits)
+            if stats["university"] or stats["department"]:
+                meta_bits = " · ".join(
+                    part
+                    for part in [stats.get("university"), stats.get("department")]
+                    if part
+                )
+                st.caption(meta_bits)
 
-        _render_rating_boxes(stats)
+            _render_rating_boxes(stats)
 
         _html(
             """
@@ -879,39 +883,47 @@ with ask_tab:
         )
 
     with col2:
-        st.markdown(f"#### Ask about {selected_name}")
-        st.markdown(
-            '<p class="osp-meta">Grading, exams, teaching style, workload — '
-            "answers stay grounded in that professor’s reviews.</p>",
-            unsafe_allow_html=True,
-        )
-
-        _example_buttons(
-            [
-                "Is this professor good for beginners?",
-                "How is the grading style?",
-                "What do students say about exams?",
-            ],
-            "ask_example",
-            "ask_query",
-        )
-
-        with st.form("ask_form", clear_on_submit=False):
-            ask_query = st.text_input(
-                "Your question",
-                key="ask_query",
-                placeholder="e.g. How are the exams for CS383 under this professor?",
-                label_visibility="collapsed",
+        if not selected_name:
+            st.markdown("#### Ask about a professor")
+            st.markdown(
+                '<p class="osp-meta">Pick a professor on the left to see their ratings '
+                "and ask about grading, exams, teaching style, or workload.</p>",
+                unsafe_allow_html=True,
             )
-            ask_submitted = st.form_submit_button("Ask", type="primary")
+        else:
+            st.markdown(f"#### Ask about {selected_name}")
+            st.markdown(
+                '<p class="osp-meta">Grading, exams, teaching style, workload — '
+                "answers stay grounded in that professor’s reviews.</p>",
+                unsafe_allow_html=True,
+            )
 
-        if ask_submitted and ask_query.strip():
-            with st.spinner("Searching through student reviews..."):
-                st.session_state.ask_result = ask(ask_query.strip(), professor_id)
-                st.session_state.ask_result_for = selected_name
+            _example_buttons(
+                [
+                    "Is this professor good for beginners?",
+                    "How is the grading style?",
+                    "What do students say about exams?",
+                ],
+                "ask_example",
+                "ask_query",
+            )
+
+            with st.form("ask_form", clear_on_submit=False):
+                ask_query = st.text_input(
+                    "Your question",
+                    key="ask_query",
+                    placeholder="e.g. How are the exams for CS383 under this professor?",
+                    label_visibility="collapsed",
+                )
+                ask_submitted = st.form_submit_button("Ask", type="primary")
+
+            if ask_submitted and ask_query.strip():
+                with st.spinner("Searching through student reviews..."):
+                    st.session_state.ask_result = ask(ask_query.strip(), professor_id)
+                    st.session_state.ask_result_for = selected_name
 
         result = st.session_state.ask_result
-        if result and st.session_state.ask_result_for == selected_name:
+        if selected_name and result and st.session_state.ask_result_for == selected_name:
             _answer_panel("Answer", result["answer"])
             _render_sources(result["sources"], show_professor=False)
         else:
